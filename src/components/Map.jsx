@@ -81,6 +81,28 @@ function DrawingTools({ onPolygonDrawn }) {
 export default function Map() {
   const [activeLayer, setActiveLayer] = useState("dark")
   const [coords, setCoords] = useState([])
+  const [result, setResult] = useState(null)
+  const [loading, setLoading] = useState(false)
+
+  async function handleAnalyze() {
+    if (coords.length === 0) return
+    setLoading(true)
+    setResult(null)
+
+    try {
+      const response = await fetch("http://localhost:8000/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ coordinates: coords })
+      })
+      const data = await response.json()
+      setResult(data)
+    } catch (error) {
+      setResult({ message: "Backend connection failed", error: error.message })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div style={{ display: "flex", height: "100vh" }}>
@@ -105,7 +127,7 @@ export default function Map() {
         </div>
 
         <div style={{ fontSize: "11px", color: "#6b7a8d", letterSpacing: "0.08em" }}>
-          WEEK 1 - FOUNDATION
+          WEEK 2 - BACKEND CONNECTION
         </div>
 
         <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.08)" }} />
@@ -163,7 +185,7 @@ export default function Map() {
             1. Click the polygon tool<br />
             2. Click points on the map<br />
             3. Click first point to close<br />
-            4. Coordinates appear below
+            4. Click "analyze area" below
           </div>
         </div>
 
@@ -205,16 +227,65 @@ export default function Map() {
                   <span>{c.lat}, {c.lng}</span>
                 </div>
               ))}
-              <div style={{
-                marginTop: "8px", paddingTop: "8px",
-                borderTop: "1px solid rgba(255,255,255,0.08)",
-                fontSize: "11px", color: "#6b7a8d", lineHeight: 1.7,
-              }}>
-                Week 2: send to FastAPI then GEE returns NDVI
-              </div>
             </div>
           )}
         </div>
+
+        <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.08)" }} />
+
+        {/* Analyze button */}
+        <button
+          onClick={handleAnalyze}
+          disabled={loading || coords.length === 0}
+          style={{
+            width: "100%",
+            background: loading ? "#0f3d2e" : coords.length === 0 ? "rgba(255,255,255,0.05)" : "#1D9E75",
+            color: loading ? "#3a7a60" : coords.length === 0 ? "#6b7a8d" : "#fff",
+            border: "none",
+            borderRadius: "8px",
+            padding: "12px",
+            fontSize: "13px",
+            fontFamily: "monospace",
+            cursor: (loading || coords.length === 0) ? "not-allowed" : "pointer",
+            transition: "all 0.2s",
+          }}
+        >
+          {loading ? "analyzing..." : "analyze area"}
+        </button>
+
+        {/* Result from backend */}
+        {result && (
+          <div style={{
+            background: "#080c10",
+            border: "1px solid rgba(29,158,117,0.3)",
+            borderRadius: "8px",
+            padding: "12px",
+            fontSize: "11px",
+            color: "#6b7a8d",
+            lineHeight: 1.8,
+          }}>
+            <div style={{ color: "#1D9E75", marginBottom: "6px" }}>
+              backend response
+            </div>
+            <div>{result.message}</div>
+            {result.vertex_count && <div>vertices: {result.vertex_count}</div>}
+            {result.first_point && (
+              <div>
+                first point: {result.first_point.lat}, {result.first_point.lng}
+              </div>
+            )}
+            {result.status && (
+              <div style={{ color: "#534AB7", marginTop: "6px" }}>
+                {result.status}
+              </div>
+            )}
+            {result.error && (
+              <div style={{ color: "#E24B4A", marginTop: "6px" }}>
+                {result.error}
+              </div>
+            )}
+          </div>
+        )}
 
       </div>
 
