@@ -268,12 +268,15 @@ export default function Map() {
               backend response
             </div>
             <div>{result.message}</div>
-            {result.vertex_count && <div>vertices: {result.vertex_count}</div>}
-            {result.first_point && (
-              <div>
-                first point: {result.first_point.lat}, {result.first_point.lng}
-              </div>
-            )}
+{result.vertex_count && <div>vertices: {result.vertex_count}</div>}
+{result.ndvi_mean !== undefined && (
+  <div style={{ color: "#1D9E75", marginTop: "4px" }}>
+    NDVI: {result.ndvi_mean}
+  </div>
+)}
+{result.area_ha !== undefined && (
+  <div>area: {result.area_ha} ha</div>
+)}
             {result.status && (
               <div style={{ color: "#534AB7", marginTop: "6px" }}>
                 {result.status}
