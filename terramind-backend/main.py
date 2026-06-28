@@ -22,6 +22,8 @@ class Coordinate(BaseModel):
 
 class PolygonData(BaseModel):
     coordinates: List[Coordinate]
+    start_date: str = "2024-01-01"
+    end_date: str   = "2024-12-31"
 
 @app.get("/")
 def root():
@@ -39,7 +41,7 @@ def analyze(data: PolygonData):
         # Get cloud-free Sentinel-2 imagery for 2024
         image = (
             ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED")
-            .filterDate("2024-01-01", "2024-12-31")
+            .filterDate(data.start_date, data.end_date)
             .filterBounds(geometry)
             .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", 30))
             .median()
@@ -65,6 +67,7 @@ def analyze(data: PolygonData):
             "vertex_count": len(data.coordinates),
             "ndvi_mean": round(stats.get("NDVI", 0), 4),
             "area_ha": area_ha,
+            "date_range": f"{data.start_date} to {data.end_date}",
             "status": "connected to Google Earth Engine"
         }
 

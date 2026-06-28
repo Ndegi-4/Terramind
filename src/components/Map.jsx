@@ -55,18 +55,28 @@ function DrawingTools({ onPolygonDrawn }) {
       },
     })
 
-    map.on("pm:create", (e) => {
-      const points = e.layer.getLatLngs()[0]
-      const coords = points.map((p) => ({
-        lat: p.lat.toFixed(5),
-        lng: p.lng.toFixed(5),
-      }))
-      onPolygonDrawn(coords)
-    })
+    // Helper function to extract coordinates from a layer
+function extractCoords(layer) {
+  return layer.getLatLngs()[0].map((p) => ({
+    lat: p.lat.toFixed(5),
+    lng: p.lng.toFixed(5),
+  }))
+}
 
-    map.on("pm:remove", () => {
-      onPolygonDrawn([])
-    })
+// When polygon is first drawn
+map.on("pm:create", (e) => {
+  onPolygonDrawn(extractCoords(e.layer))
+
+  // Also listen for edits on THIS specific layer
+  e.layer.on("pm:edit", (editEvent) => {
+    onPolygonDrawn(extractCoords(editEvent.layer))
+  })
+})
+
+// When polygon is deleted
+map.on("pm:remove", () => {
+  onPolygonDrawn([])
+})
 
     return () => {
       map.pm.removeControls()
@@ -83,6 +93,8 @@ export default function Map() {
   const [coords, setCoords] = useState([])
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [startDate, setStartDate] = useState("2024-01-01")
+  const [endDate,   setEndDate]   = useState("2024-12-31")
 
   async function handleAnalyze() {
     if (coords.length === 0) return
@@ -93,7 +105,11 @@ export default function Map() {
       const response = await fetch("http://localhost:8000/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ coordinates: coords })
+        body: JSON.stringify({ 
+  coordinates: coords,
+  start_date: startDate,
+  end_date: endDate
+})
       })
       const data = await response.json()
       setResult(data)
@@ -129,6 +145,7 @@ export default function Map() {
         <div style={{ fontSize: "11px", color: "#6b7a8d", letterSpacing: "0.08em" }}>
           WEEK 2 - BACKEND CONNECTION
         </div>
+        
 
         <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.08)" }} />
 
@@ -173,7 +190,58 @@ export default function Map() {
             ))}
           </div>
         </div>
+        <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.08)" }} />
 
+{/* Date range picker */}
+<div>
+  <div style={{ fontSize: "11px", color: "#6b7a8d", marginBottom: "10px" }}>
+    // DATE RANGE
+  </div>
+  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+    <div>
+      <div style={{ fontSize: "11px", color: "#6b7a8d", marginBottom: "4px" }}>
+        from
+      </div>
+      <input
+        type="date"
+        value={startDate}
+        onChange={(e) => setStartDate(e.target.value)}
+        style={{
+          width: "100%",
+          background: "#080c10",
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: "6px",
+          padding: "8px 10px",
+          color: "#e8edf3",
+          fontSize: "12px",
+          fontFamily: "monospace",
+          outline: "none",
+        }}
+      />
+    </div>
+    <div>
+      <div style={{ fontSize: "11px", color: "#6b7a8d", marginBottom: "4px" }}>
+        to
+      </div>
+      <input
+        type="date"
+        value={endDate}
+        onChange={(e) => setEndDate(e.target.value)}
+        style={{
+          width: "100%",
+          background: "#080c10",
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: "6px",
+          padding: "8px 10px",
+          color: "#e8edf3",
+          fontSize: "12px",
+          fontFamily: "monospace",
+          outline: "none",
+        }}
+      />
+    </div>
+  </div>
+</div>
         <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.08)" }} />
 
         {/* Instructions */}
@@ -188,7 +256,7 @@ export default function Map() {
             4. Click "analyze area" below
           </div>
         </div>
-
+        
         <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.08)" }} />
 
         {/* Coordinates */}
@@ -276,6 +344,11 @@ export default function Map() {
 )}
 {result.area_ha !== undefined && (
   <div>area: {result.area_ha} ha</div>
+)}
+{result.date_range && (
+  <div style={{ marginTop: "4px", color: "#6b7a8d" }}>
+    period: {result.date_range}
+  </div>
 )}
             {result.status && (
               <div style={{ color: "#534AB7", marginTop: "6px" }}>
