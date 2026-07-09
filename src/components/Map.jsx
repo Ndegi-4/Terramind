@@ -342,12 +342,64 @@ export default function Map() {
     NDVI: {result.ndvi_mean}
   </div>
 )}
+
 {result.area_ha !== undefined && (
   <div>area: {result.area_ha} ha</div>
 )}
 {result.date_range && (
   <div style={{ marginTop: "4px", color: "#6b7a8d" }}>
     period: {result.date_range}
+  </div>
+)}
+
+{/* Land cover breakdown */}
+{result.land_cover && result.land_cover.length > 0 && (
+  <div style={{ marginTop: "12px" }}>
+    <div style={{
+      fontSize: "11px", color: "#6b7a8d",
+      marginBottom: "8px", letterSpacing: "0.08em"
+    }}>
+      LAND COVER
+    </div>
+    {result.land_cover.map((cls, i) => (
+      <div key={i} style={{ marginBottom: "6px" }}>
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          fontSize: "11px",
+          marginBottom: "3px"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span style={{
+              width: "8px", height: "8px",
+              borderRadius: "50%",
+              background: cls.color,
+              flexShrink: 0,
+              display: "inline-block"
+            }} />
+            <span style={{ color: "#e8edf3" }}>{cls.name}</span>
+          </div>
+          <span style={{ color: cls.color, fontWeight: 500 }}>
+            {cls.percentage}%
+          </span>
+        </div>
+        {/* Progress bar */}
+        <div style={{
+          height: "3px",
+          background: "rgba(255,255,255,0.05)",
+          borderRadius: "2px",
+          overflow: "hidden"
+        }}>
+          <div style={{
+            height: "100%",
+            width: `${cls.percentage}%`,
+            background: cls.color,
+            borderRadius: "2px",
+            transition: "width 0.8s ease"
+          }} />
+        </div>
+      </div>
+    ))}
   </div>
 )}
             {result.status && (
